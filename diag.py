@@ -28,13 +28,13 @@ def findEvents(index,operator,threshold,per=5,window=[-3,3]):
     import util.stat as stat
 
     if operator == '>':
-        peak_op = numpy.argmax
+        argpeak_op = numpy.argmax
         comp_op = numpy.greater
-        extr_op = numpy.max
+        peak_op = numpy.max
     elif operator == '<':
-        peak_op = numpy.argmin
+        argpeak_op = numpy.argmin
         comp_op = numpy.less
-        extr_op = numpy.min
+        peak_op = numpy.min
     else:
         raise Exception('operator has to be either > or <')
     
@@ -55,10 +55,10 @@ def findEvents(index,operator,threshold,per=5,window=[-3,3]):
     subsets = [ index[starts[i]:ends[i]] for i in range(len(starts)) ]
 
     # Persistence check
-    pklocs = [ starts[i]+peak_op(subsets[i]) for i in range(len(subsets)) if len(subsets[i]) >= per ]
+    pklocs = [ starts[i]+argpeak_op(subsets[i]) for i in range(len(subsets)) if len(subsets[i]) >= per ]
 
     # Check for being global extrema within the window
-    pklocs = [ loc for loc in pklocs if index[loc] == extr_op(index[numpy.max([0,loc+window[0]]):numpy.min([len(index)-1,loc+window[1]])]) ]
+    pklocs = [ loc for loc in pklocs if index[loc] == peak_op(index[numpy.max([0,loc+window[0]]):numpy.min([len(index)-1,loc+window[1]])]) ]
 
     pklocs = [ int(loc) for loc in pklocs if loc != False ]
     pks = [ index[loc] for loc in pklocs ]
