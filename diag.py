@@ -4,6 +4,7 @@ def findENSO_percentile(index,percentile):
     warm and cold are dictionaries containing the locations and peak values of the events
     '''
     import numpy
+    if percentile > 50.: percentile = 100. - percentile
     warm = {}
     cold = {}
     warm['locs'],warm['peaks'] = findEvents(index,'>',numpy.percentile(index,100-percentile))
@@ -61,6 +62,6 @@ def findEvents(index,operator,threshold,per=5,window=[-3,3]):
     pklocs = [ loc for loc in pklocs if index[loc] == peak_op(index[numpy.max([0,loc+window[0]]):numpy.min([len(index)-1,loc+window[1]])]) ]
 
     pklocs = [ int(loc) for loc in pklocs if loc != False ]
-    pks = [ index[loc] for loc in pklocs ]
-
+    pks = numpy.array([ index[loc].squeeze() for loc in pklocs ])
+    
     return pklocs,pks
