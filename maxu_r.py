@@ -31,11 +31,13 @@ def plot_r(y,x,*args,**kwargs):
     x = numpy.append(x,0.)
     
     assert len(y) == len(x)
-    print x,y
+    yx = numpy.array(zip(y,x),dtype=[('y','f4'),('x','f4')])
+    yx = numpy.sort(yx,order='x')
     s_neg = numpy.polyfit(x[x<=0],y[x<=0],1)[0]
     s_pos = numpy.polyfit(x[x>=0],y[x>=0],1)[0]
-
-    pylab.plot(numpy.sort(x),numpy.sort(y),*args,**kwargs)
+    y = [ a[0] for a in yx ]
+    x = [ a[1] for a in yx ]
+    pylab.plot(x,y,*args,**kwargs)
     pylab.scatter(x,y)    
     return (s_pos - s_neg)/(s_pos + s_neg)
 
