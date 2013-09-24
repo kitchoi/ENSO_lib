@@ -65,3 +65,25 @@ def findEvents(index,operator,threshold,per=5,window=[-3,3]):
     pks = numpy.array([ index[loc].squeeze() for loc in pklocs ])
     
     return pklocs,pks
+
+    # Find pattern for weak El Nino
+def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4):
+    ''' Given a field and Nino3.4 index time series, extract
+    the time at which nino34_mid-nino34_tole < nino34 < nino34_mid+nino34_tole
+    Then compute the climatology for these snap shots
+    '''
+    import numpy
+    import util
+    warm,cold = findENSO_percentile(nino34.data,49.)
+    locs = warm['locs'] + cold['locs']
+    peaks = numpy.append(warm['peaks'],cold['peaks'])
+    locs = numpy.array(locs)[ numpy.abs(peaks - nino34_mid)
+                                < nino34_tole]
+    if len(locs) == 0: 
+        result = util.nc.Variable(data=numpy.ma.ones(field[0].data.shape),
+                                  parent=field[0])
+        result.data[:] = numpy.ma.masked
+        return result
+    pattern = util.nc.climatology(field[locs])
+    print 'Nino 3.4: '+ str(nino34[locs].time_ave().squeeze().data)
+    return pattern
