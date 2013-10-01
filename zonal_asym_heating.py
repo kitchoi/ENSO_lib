@@ -7,7 +7,9 @@ def zonal_dev(var):
     Input: var - a util.nc.Variable instance
     '''
     var.ensureMasked()
-    return var - var.zonal_ave()
+    var2 = var - var.zonal_ave()
+    var2.addHistory('Zonal asymmetric part')
+    return var2
 
 def dotproduct(var1,var2):
     ''' Return the dotproduct of two variables.
@@ -48,19 +50,29 @@ def mask_per(var,per):
     '''
     var.ensureMasked()
     small = per_range(var.data,per)
-    return mask_small(var,small)
+    newvar = util.nc.Variable(data=mask_small(var.data,small),parent=var,
+                              history='Masked '+str(per)+' percentage of range')
+    
+    return newvar
 
-def mask_small(var,small):
+def mask_small(data,small):
     ''' Absolute values smaller than the value "small" will be masked away
     Input: 
-    var - util.nc.Variable
+    data - numpy masked array
     small - a positive scalar
     '''
+    assert isinstance(data,numpy.ma.core.MaskedArray)
+    newdata = numpy.ma.array(data)
+    assert (newdata.mask == data.mask).all()
+    assert id(newdata) != id(data)
     if small < 0.: small = numpy.abs(small)
-    var.data = numpy.ma.masked_inside(var.data,-1*small,small)
-    return var
+    print small
+    newdata = numpy.ma.masked_inside(newdata,-1*small,small)
+    return newdata
 
 def project(var1,var2):
+    ''' Return the projection of var1 onto var2
+    '''
     var1.ensureMasked()
     var2.ensureMasked()
     # To avoid multiplying and averaging very small values

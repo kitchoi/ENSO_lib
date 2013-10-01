@@ -85,5 +85,6 @@ def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4):
         result.data[:] = numpy.ma.masked
         return result
     pattern = util.nc.climatology(field[locs])
+    pattern.setattr('event_loc',locs.squeeze())
     print 'Nino 3.4: '+ str(nino34[locs].time_ave().squeeze().data)
     return pattern
