@@ -50,12 +50,24 @@ def mask_per(var,per):
     '''
     var.ensureMasked()
     small = per_range(var.data,per)
-    newvar = util.nc.Variable(data=mask_small(var.data,small),parent=var,
+    newvar = util.nc.Variable(data=mask_small_numpy(var.data,small),parent=var,
                               history='Masked '+str(per)+' percentage of range')
     
     return newvar
 
-def mask_small(data,small):
+def mask_small(var,small):
+    ''' Absolute values smaller than the value "small" will be masked away
+    Input: 
+    var - an util.nc.Variable
+    small - a positive scalar
+    '''
+    var.ensureMasked()
+    newvar = util.nc.Variable(data=mask_small_numpy(var.data,small),
+                              parent=var,
+                              history='Masked abs(value) < '+str(small))
+    return newvar
+
+def mask_small_numpy(data,small):
     ''' Absolute values smaller than the value "small" will be masked away
     Input: 
     data - numpy masked array
