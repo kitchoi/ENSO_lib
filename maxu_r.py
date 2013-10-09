@@ -2,13 +2,13 @@ import numpy
 import util
 import pylab
 
-def max_anom(u,lon_width=40.,lat=(-5.,5.)):
+def max_anom(u,lon_width=40.,lat=(-2.,2.)):
     ''' Return the maximum U after applying a lon_width degree 
     running mean along the longitude.  Assumed uniform grid.
     Input:
     u - util.nc.Variable
     lon_width - scalar in degree (default = 40.)
-    lat - region in the latitude (default = (-5.,5.))
+    lat - region in the latitude (default = (-2.,2.))
     '''
     nlon = numpy.round(lon_width/numpy.diff(u.getLongitude()[0:2])[0])
     runaveu = u.getRegion(lat=lat).wgt_ave('Y').runave(nlon,'X').data.squeeze()
