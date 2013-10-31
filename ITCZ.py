@@ -1,14 +1,14 @@
 import numpy
 import util
 
-def lines(precip,x,y,thres=lambda p: numpy.percentile(p,90.)):
+def lines(precip,x,y,thres):
     '''
     Given precip (numpy.array), x (lon in degree),
     y (lat in degree), locate the ITCZ and SPCZ central
     axis.
 
-    thres - threshold for large precipitation
-            (default= the 90-th percentile)
+    thres - threshold for large precipitation,
+            has to be a function
     
     Return {'NP': [slope,intercept],'SP':[slope,intercept]}
     '''
@@ -42,9 +42,9 @@ def precipfunc(var):
     return var.time_ave().squeeze().getRegion(lat=(-20.,20.),
                                                 lon=(150.,260.))
 
-def lines_var(var,*args,**kwargs):
+def lines_var(var,thres):
     return lines(var.data,var.getLongitude(),var.getLatitude(),
-                           *args,**kwargs)
+                           thres)
 
 def y0(var,lon,lat):
     ''' Given the var (numpy.ndarray), lon (numpy.array),
@@ -77,16 +77,17 @@ def x0(var,lon,lat):
     x0['SP'] = lon[varaveSP.argmax()]
     return x0
     
-def width(var,lon,lat,*args,**kwargs):
+def width(var,lon,lat,thres):
     ''' Given the var (numpy.ndarray), lon (numpy.array),
     lat (numpy.array), find the slopes of the central axes of the ITCZ and
     rotate the field and find the widths of the ITCZ/SPCZ
+    thres - threshold, has to be a function
     Return : {'NP': width in degree, 'SP': with in degree }
     
     '''
     # Get the slopes and intercepts for the ITCZ and SPCZ
     import scipy.ndimage.interpolation
-    central_axes = lines(var,lon,lat,*args,**kwargs)
+    central_axes = lines(var,lon,lat,thres)
     widths = {}
     for key,value in central_axes.items():
         slope = value[0]
@@ -117,7 +118,7 @@ def width(var,lon,lat,*args,**kwargs):
         
     return widths
 
-def analysis(var):
+def analysis(var,thres):
     ''' Given var (util.nc.variable), perform an analysis on the ITCZ pattern
     Return:
     { 'NP': dict(key=['y0','width','slope','y-intercept'])
@@ -127,10 +128,13 @@ def analysis(var):
           width is the gaussian width of the ITCZ/SPCZ across itself
           slope,y-intercept gives the location of the ITCZ/SPCZ as
           lat = y-intercept + slope * lon
+    Input:
+    var - util.nc.Variable
+    thres - a function that takes var data and return the threshold
     '''
     y0_ans = y0(var.data,var.getLongitude(),var.getLatitude())
-    width_ans = width(var.data,var.getLongitude(),var.getLatitude())
-    slopes_ans = lines(var.data,var.getLongitude(),var.getLatitude())
+    width_ans = width(var.data,var.getLongitude(),var.getLatitude(),thres)
+    slopes_ans = lines(var.data,var.getLongitude(),var.getLatitude(),thres)
     x0_ans = x0(var.data,var.getLongitude(),var.getLatitude())
     results = { key: dict(y0=y0_ans[key],width=width_ans[key],
                           slope=slopes_ans[key][0],
