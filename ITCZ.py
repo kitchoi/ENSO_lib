@@ -51,6 +51,8 @@ def y0(var,lon,lat):
     lat (numpy.array), find the latitude of the ITCZ/SPCZ
     '''
     assert var.ndim == 2
+    assert var.shape[0] == len(lat)
+    assert var.shape[1] == len(lon)
     varxave = var.mean(axis=-1)
     y0 = {}
     # Northern
@@ -76,6 +78,36 @@ def x0(var,lon,lat):
     varaveSP = varave[lat<0,:].mean(axis=0)
     x0['SP'] = lon[varaveSP.argmax()]
     return x0
+
+def xave_max(var,lon,lat):
+    ''' Given the var (numpy.ndarray),
+    lon (numpy.array), lat(numpy.array),
+    compute the zonal average and then 
+    return the max for the ITCZ(y>0)/SPCZ(y<0)
+    '''
+    assert var.ndim == 2
+    assert var.shape[0] == len(lat)
+    assert var.shape[1] == len(lon)
+    varxave = var.mean(axis=-1)
+    amp = {}
+    # Northern
+    amp['NP'] = varxave[lat>0,:].max()
+    # Southern
+    amp['SP'] = varxave[lat<0,:].max()
+    return amp
+    
+
+def amp_sum(var,lon,lat):
+    ''' Given the var (numpy.ndarray),
+    lon (numpy.array), lat(numpy.array),
+    return the sum for the ITCZ(y>0)/SPCZ(y<0)
+    '''
+    amp = {}
+    # Northern
+    amp['NP'] = var[lat>0,:].sum()
+    # Southern
+    amp['SP'] = var[lat<0,:].sum()
+    return amp
     
 def width(var,lon,lat,thres):
     ''' Given the var (numpy.ndarray), lon (numpy.array),
@@ -107,21 +139,21 @@ def width(var,lon,lat,thres):
             ind = -1
         # Half-width-half-maximum
         hwhm = numpy.abs(
-                          numpy.extract(
-                              numpy.logical_and(
-                                       newvar_xave < newvar_xave.max()/2.,
-                                       regime),
-                              lat)[ind] - lat[newvar_xave.argmax()]
-                         )
+            numpy.extract(
+                numpy.logical_and(
+                    newvar_xave < newvar_xave.max()/2.,
+                                        regime),
+                               lat)[ind] - lat[newvar_xave.argmax()]
+                           )
         # width parameter for gaussian function
         widths[key] = hwhm/numpy.sqrt(2.*numpy.log(2.))
-        
+    
     return widths
 
 def analysis(var,thres):
     ''' Given var (util.nc.variable), perform an analysis on the ITCZ pattern
     Return:
-    { 'NP': dict(key=['y0','width','slope','y-intercept'])
+    { 'NP': dict(key=['y0','x0','width','slope','y-intercept','amp'])
       'SP' : same as above }
 
     where y0 is the latitude of the max zonal mean
@@ -136,16 +168,26 @@ def analysis(var,thres):
     width_ans = width(var.data,var.getLongitude(),var.getLatitude(),thres)
     slopes_ans = lines(var.data,var.getLongitude(),var.getLatitude(),thres)
     x0_ans = x0(var.data,var.getLongitude(),var.getLatitude())
+    xave_max_ans = xave_max(var.data,var.getLongitude(),var.getLatitude())
     results = { key: dict(y0=y0_ans[key],width=width_ans[key],
                           slope=slopes_ans[key][0],
                           y_intercept=slopes_ans[key][1],
-                          x0=x0_ans[key]) for key in y0_ans.keys() }
+                          x0=x0_ans[key],
+                          xave_max=xave_max_ans[key]) for key in y0_ans.keys() }
     return results
 
 def idealized(amp,x,y,x_loc,y_loc,slope,x_width,y_width):
     theta = numpy.arctan(slope)
+    assert x.shape == y.shape
     xP = (x - x_loc)*numpy.cos(theta) + (y - y_loc)*numpy.sin(theta)
     yP = -1.*(x - x_loc)*numpy.sin(theta) + (y - y_loc)*numpy.cos(theta)
+    #if amp_sum is not None:
+    #    print('amp_sum is given and is used to recalculate amp.')
+    #    amp = amp_sum/2.*numpy.pi/y_width/x_width
+    
     q = amp*numpy.exp(-0.5*(xP**2.)/(x_width**2.))*numpy.exp(-0.5*(yP**2.)/(y_width**2.))
+    #if amp_sum is not None:
+    #    print "q_sum = {:.2f} and amp_sum = {:.2f}".format(q.sum(),amp_sum)
+    
     return q
 
