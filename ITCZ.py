@@ -37,10 +37,12 @@ def lines(precip,x,y,thres):
 
 def precipfunc(var):
     ''' Select the region lat=(-20.,20.), lon=(150.,260.)
+    And perform time average
     var - util.nc.Variable
+    Return a util.nc.Variable
     '''
-    return var.time_ave().squeeze().getRegion(lat=(-20.,20.),
-                                                lon=(150.,260.))
+    return var.getRegion(lat=(-20.,20.),
+                         lon=(150.,260.)).time_ave().squeeze()
 
 def lines_var(var,thres):
     return lines(var.data,var.getLongitude(),var.getLatitude(),
@@ -129,24 +131,16 @@ def width(var,lon,lat,thres):
         newvar = scipy.ndimage.interpolation.affine_transform(
                                                            var,matrix)
         newvar_xave = newvar.mean(axis=-1)
-        if slope > 0.: # NP
-            regime = lat > 0.
-            newvar_xave[lat<0.] = numpy.ma.masked
-            ind = 0
+        if key == 'NP':
+            newvar_xave[lat<0] = numpy.ma.masked
         else:
-            regime = lat < 0.
-            newvar_xave[lat>0.] = numpy.ma.masked
-            ind = -1
-        # Half-width-half-maximum
-        hwhm = numpy.abs(
-            numpy.extract(
-                numpy.logical_and(
-                    newvar_xave < newvar_xave.max()/2.,
-                                        regime),
-                               lat)[ind] - lat[newvar_xave.argmax()]
-                           )
-        # width parameter for gaussian function
-        widths[key] = hwhm/numpy.sqrt(2.*numpy.log(2.))
+            newvar_xave[lat>0] = numpy.ma.masked
+        
+        imax = newvar_xave.argmax()
+        iwidth = numpy.argmin(
+            numpy.abs(newvar_xave/newvar_xave[imax]
+                          - numpy.exp(-1.)))
+        widths[key] = numpy.abs(lat[iwidth] - lat[imax])/numpy.sqrt(2.)
     
     return widths
 
