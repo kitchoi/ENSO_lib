@@ -48,6 +48,33 @@ def lines_var(var,thres):
     return lines(var.data,var.getLongitude(),var.getLatitude(),
                            thres)
 
+def ITCZ_lat_x(var,lon,lat,axis=[-2,-1]):
+    ''' Latitude of the ITCZ as a function of longitude
+    weighted by the intensity of the ITCZ
+    var - numpy.ndarray
+    lon - numpy.array
+    lat - numpy.array
+    '''
+    import keepdims
+    assert var.shape[-1] == len(lon)
+    assert var.shape[-2] == len(lat)
+    iyaxis = -2
+    lon,lat = numpy.meshgrid(lon,lat)  # (y,x)
+    lon = lon[(numpy.newaxis,)*(var.ndim-2)]
+    lat = lat[(numpy.newaxis,)*(var.ndim-2)]
+    
+    y0 = {}
+    # Northern
+    y0['NP'] = keepdims.mean(var*lat*(lat>0),axis=axis)/\
+               keepdims.mean(var*(lat>0),axis=axis)
+    # Southern
+    y0['SP'] = keepdims.mean(var*lat*(lat<0),axis=axis)/\
+               keepdims.mean(var*(lat<0),axis=axis)
+    
+    return y0
+
+
+
 def y0(var,lon,lat):
     ''' Given the var (numpy.ndarray), lon (numpy.array),
     lat (numpy.array), find the latitude of the ITCZ/SPCZ
