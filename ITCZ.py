@@ -48,7 +48,7 @@ def lines_var(var,thres):
     return lines(var.data,var.getLongitude(),var.getLatitude(),
                            thres)
 
-def ITCZ_lat_x(var,lon,lat,axis=[-2,-1]):
+def ITCZ_lat_x(var,lon,lat,axis=-2,weighted=True):
     ''' Latitude of the ITCZ as a function of longitude
     weighted by the intensity of the ITCZ
     var - numpy.ndarray
@@ -58,18 +58,25 @@ def ITCZ_lat_x(var,lon,lat,axis=[-2,-1]):
     import keepdims
     assert var.shape[-1] == len(lon)
     assert var.shape[-2] == len(lat)
-    iyaxis = -2
-    lon,lat = numpy.meshgrid(lon,lat)  # (y,x)
-    lon = lon[(numpy.newaxis,)*(var.ndim-2)]
-    lat = lat[(numpy.newaxis,)*(var.ndim-2)]
+    assert type(axis) is int
+    lonND,latND = numpy.meshgrid(lon,lat)  # (y,x)
+    lonND = lonND[(numpy.newaxis,)*(var.ndim-2)]
+    latND = latND[(numpy.newaxis,)*(var.ndim-2)]
     
+    axis = axis % var.ndim 
     y0 = {}
-    # Northern
-    y0['NP'] = keepdims.mean(var*lat*(lat>0),axis=axis)/\
-               keepdims.mean(var*(lat>0),axis=axis)
-    # Southern
-    y0['SP'] = keepdims.mean(var*lat*(lat<0),axis=axis)/\
-               keepdims.mean(var*(lat<0),axis=axis)
+    if weighted:
+        # Northern
+        y0['NP'] = keepdims.sum(var*latND*(latND>0),axis=axis)/\
+                   keepdims.sum(var*(latND>0),axis=axis)
+        # Southern
+        y0['SP'] = keepdims.sum(var*latND*(latND<0),axis=axis)/\
+                   keepdims.sum(var*(latND<0),axis=axis)
+    else:
+        # Northern
+        y0['NP'] = lat[(var*(latND>0)).argmax(axis=axis)]
+        # Southern
+        y0['SP'] = lat[(var*(latND<0)).argmax(axis=axis)]
     
     return y0
 
