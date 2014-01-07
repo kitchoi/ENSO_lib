@@ -7,13 +7,13 @@ def max_anom_loc(u,lon_width=40.,lat=(-2.,2.),region=None):
     a lon_width degree running mean along the longitude.
     Assumed uniform grid
     '''
-    nlon = numpy.round(lon_width/numpy.diff(u.getLongitude()[0:2])[0])
+    #nlon = numpy.round(lon_width/numpy.diff(u.getLongitude()[0:2])[0])
     if region is None:
         utmp = u.getRegion(lat=lat)
     else:
         utmp = u.getRegion(**region)
     
-    runaveu = utmp.wgt_ave('Y').runave(nlon,'X').data.squeeze()
+    runaveu = utmp.wgt_ave('Y').runave(lon_width,'X').data.squeeze()
     return u.getLongitude()[numpy.abs(runaveu) == numpy.abs(runaveu).max()][0]
 
 def max_anom(u,lon_width=40.,lat=(-2.,2.),region=None):
