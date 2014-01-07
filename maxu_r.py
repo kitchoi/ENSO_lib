@@ -2,21 +2,33 @@ import numpy
 import util
 import pylab
 
-def max_anom_loc(u,lon_width=40.,lat=(-2.,2.),region=None):
-    ''' Return the longitude where U is maximum after applying
+def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value'):
+    ''' Return the index where U is maximum after applying
     a lon_width degree running mean along the longitude.
     Assumed uniform grid
     '''
-    #nlon = numpy.round(lon_width/numpy.diff(u.getLongitude()[0:2])[0])
     if region is None:
         utmp = u.getRegion(lat=lat)
     else:
         utmp = u.getRegion(**region)
     
     runaveu = utmp.wgt_ave('Y').runave(lon_width,'X').data.squeeze()
-    return u.getLongitude()[numpy.abs(runaveu) == numpy.abs(runaveu).max()][0]
+    index = numpy.abs(runaveu) == numpy.abs(runaveu).max()
+    if option == 'loc':
+        return u.getLongitude()[index][0]
+    elif option == 'value':
+        return runaveu[index][0]
 
-def max_anom(u,lon_width=40.,lat=(-2.,2.),region=None):
+
+def max_anom_loc(u,*args,**kwargs):
+    ''' Return the longitude where U is maximum after applying
+    a lon_width degree running mean along the longitude.
+    Assumed uniform grid
+    '''
+    kwargs['option'] = 'loc'
+    return max_anom_index(u,*args,**kwargs)
+
+def max_anom(u,*args,**kwargs):
     ''' Return the maximum U after applying a lon_width degree 
     running mean along the longitude.  Assumed uniform grid.
     Input:
@@ -24,14 +36,8 @@ def max_anom(u,lon_width=40.,lat=(-2.,2.),region=None):
     lon_width - scalar in degree (default = 40.)
     lat - region in the latitude (default = (-2.,2.))
     '''
-    nlon = numpy.round(lon_width/numpy.diff(u.getLongitude()[0:2])[0])
-    if region is None:
-        utmp = u.getRegion(lat=lat)
-    else:
-        utmp = u.getRegion(**region)
-    
-    runaveu = utmp.wgt_ave('Y').runave(nlon,'X').data.squeeze()
-    return runaveu[numpy.abs(runaveu) == numpy.abs(runaveu).max()][0]
+    kwargs['option'] = 'value'
+    return max_anom_index(u,*args,**kwargs)
 
 def plot_r(y,x,*args,**kwargs):
     ''' Read a list of variable, apply maxu_anom to each of them
