@@ -204,9 +204,14 @@ def analysis(var,thres):
                           xave_max=xave_max_ans[key]) for key in y0_ans.keys() }
     return results
 
-def idealized(amp,x,y,x_loc,y_loc,slope,x_width,y_width):
+def idealized(amp,x,y,x_loc,y_loc,slope,x_width,y_width,return_Variable=False):
     theta = numpy.arctan(slope)
-    assert x.shape == y.shape
+    if x.ndim ==2 and y.ndim ==2:
+        assert x.shape == y.shape
+    else:
+        assert x.ndim == 1 and y.ndim == 1
+        x,y = numpy.meshgrid(x,y)
+    
     xP = (x - x_loc)*numpy.cos(theta) + (y - y_loc)*numpy.sin(theta)
     yP = -1.*(x - x_loc)*numpy.sin(theta) + (y - y_loc)*numpy.cos(theta)
     #if amp_sum is not None:
@@ -216,6 +221,13 @@ def idealized(amp,x,y,x_loc,y_loc,slope,x_width,y_width):
     q = amp*numpy.exp(-0.5*(xP**2.)/(x_width**2.))*numpy.exp(-0.5*(yP**2.)/(y_width**2.))
     #if amp_sum is not None:
     #    print "q_sum = {:.2f} and amp_sum = {:.2f}".format(q.sum(),amp_sum)
-    
-    return q
+    if return_Variable:
+        newvar = util.nc.Variable(data=q,varname="Q",
+                                  dims=[util.nc.Dimension(data=y[:,0],
+                                                          dimname='LAT',units='degrees_N'),
+                                        util.nc.Dimension(data=x[0,:],
+                                                          dimname='LON',units='degrees_E')])
+        return newvar
+    else:
+        return q
 
