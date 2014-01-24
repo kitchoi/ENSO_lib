@@ -39,9 +39,10 @@ def max_anom(u,*args,**kwargs):
     kwargs['option'] = 'value'
     return max_anom_index(u,*args,**kwargs)
 
-def plot_r(y,x,*args,**kwargs):
+def plot_r(y,x,doPlot=True,*args,**kwargs):
     ''' Read a list of variable, apply maxu_anom to each of them
-    to find the maximum.  Plot the results and compute the value of r using
+    to find the maximum.  Plot (if doPlot is True) the results and compute 
+    the value of r using
     linear regression.
     Input:
     y      - a numpy array
@@ -62,8 +63,9 @@ def plot_r(y,x,*args,**kwargs):
     s_pos = numpy.polyfit(x[x>=0],y[x>=0],1)[0]
     y = [ a[0] for a in yx ]
     x = [ a[1] for a in yx ]
-    pylab.plot(x,y,*args,**kwargs)
-    pylab.scatter(x,y)    
+    if doPlot:
+        pylab.plot(x,y,*args,**kwargs)
+        pylab.scatter(x,y)
     return (s_pos - s_neg)/(s_pos + s_neg)
 
 
