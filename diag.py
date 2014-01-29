@@ -18,7 +18,7 @@ def findEvents(index,operator,threshold,per=5,window=[-3,3]):
     index       - numpy.ndarray (e.g. Nino3.4 index)
     operator    - string ('>' or '<')
     threshold   - threshold for event definition
-    per         - minimum persistence for index >/< threshold (default=5)
+    per         - minimum persistence for index >/< threshold (default=5, unit is consistent with the array grid)
     window      - requires the peak to be a global minima/maxima within the window around the peak (default=[-3,3])
     
     Outputs:
@@ -66,11 +66,16 @@ def findEvents(index,operator,threshold,per=5,window=[-3,3]):
     
     return pklocs,pks
 
-    # Find pattern for weak El Nino
+
 def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4):
     ''' Given a field and Nino3.4 index time series, extract
     the time at which nino34_mid-nino34_tole < nino34 < nino34_mid+nino34_tole
     Then compute the climatology for these snap shots
+    Input:
+    field  - util.nc.Variable
+    nino34 - util.nc.Variable
+    nino34_mid - mid point
+    nino34_tole - half bin size
     '''
     import numpy
     import util
@@ -88,3 +93,44 @@ def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4):
     pattern.setattr('event_loc',locs.squeeze())
     print 'Nino 3.4: '+ str(nino34[locs].time_ave().squeeze().data)
     return pattern
+
+def ENSO_duration(nino34,percentile,thres_std_fraction):
+    import numpy
+    warm,cold = findENSO_percentile(nino34,percentile)
+    warm_end = nino34.std()*thres_std_fraction
+    cold_end = warm_end*-1
+    duration = {}
+    
+    def compute_duration(operator,locs,evt_end):
+        lengths = []
+        for iloc in xrange(len(locs)):
+            loc = locs[iloc]
+            after_end = operator(nino34[loc:],evt_end)
+            if after_end.any():
+                length =  numpy.where(after_end)[0][0]
+                if iloc < len(locs)-1:
+                    # Avoid double counting events that reintensify
+                    if locs[iloc+1]-locs[iloc] > length:
+                        lengths.append(length)
+        return lengths
+    
+    duration['warm'] = compute_duration(numpy.less,warm['locs'],warm_end)
+    duration['cold'] = compute_duration(numpy.greater,cold['locs'],cold_end)
+    return duration
+
+def ENSO_transition(nino34,percentile,wait_window,per=5,window=[-3,3]):
+    import numpy
+    warm,cold = findENSO_percentile(nino34,percentile)
+    events = ['warm',]*len(warm['locs'])+['cold',]*len(cold['locs'])
+    events_locs = sorted(zip(events,warm['locs']+cold['locs']),key=lambda v:v[1])
+    events = [ evt for (evt,loc) in events_locs ]
+    locs = [ loc for (evt,loc) in events_locs ]
+    transition = {}
+    for iloc in xrange(len(events)-1):
+        evt_pair = '_'.join(events[iloc:iloc+2])
+        if locs[iloc+1]-locs[iloc] <= wait_window:
+            transition[evt_pair] = transition.setdefault(evt_pair,0) + 1
+    
+    return transition
+
+
