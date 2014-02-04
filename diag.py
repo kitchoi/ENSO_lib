@@ -27,7 +27,7 @@ def findEvents(index,operator,threshold,per=5,window=[-3,3]):
     '''
     import numpy
     import util.stat as stat
-
+    
     if operator == '>':
         argpeak_op = numpy.argmax
         comp_op = numpy.greater
@@ -43,7 +43,7 @@ def findEvents(index,operator,threshold,per=5,window=[-3,3]):
     jumps = numpy.where(numpy.diff(locs)>1)[0]
     starts = numpy.insert(locs[jumps+1],0,locs[0])
     ends = numpy.append(locs[jumps],locs[-1])
-
+    
     # Ignore the chunks that starts from the beginning or ends at the end of the index
     if starts[0] == 0:
         starts  = starts[1:]
@@ -54,13 +54,13 @@ def findEvents(index,operator,threshold,per=5,window=[-3,3]):
     
     # Chunks of the index that exceed the threshold
     subsets = [ index[starts[i]:ends[i]] for i in range(len(starts)) ]
-
+    
     # Persistence check
     pklocs = [ starts[i]+argpeak_op(subsets[i]) for i in range(len(subsets)) if len(subsets[i]) >= per ]
-
+    
     # Check for being global extrema within the window
     pklocs = [ loc for loc in pklocs if index[loc] == peak_op(index[numpy.max([0,loc+window[0]]):numpy.min([len(index)-1,loc+window[1]])]) ]
-
+    
     pklocs = [ int(loc) for loc in pklocs if loc != False ]
     pks = numpy.array([ index[loc].squeeze() for loc in pklocs ])
     
@@ -79,6 +79,7 @@ def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4):
     '''
     import numpy
     import util
+    import warnings
     warm,cold = findENSO_percentile(nino34.data,49.)
     locs = warm['locs'] + cold['locs']
     peaks = numpy.append(warm['peaks'],cold['peaks'])
@@ -88,6 +89,7 @@ def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4):
         result = util.nc.Variable(data=numpy.ma.ones(field[0].data.shape),
                                   parent=field[0])
         result.data[:] = numpy.ma.masked
+        warnings.warn("No event found!")
         return result
     pattern = util.nc.climatology(field[locs])
     pattern.setattr('event_loc',locs.squeeze())
@@ -130,7 +132,20 @@ def ENSO_transition(nino34,percentile,wait_window,per=5,window=[-3,3]):
         evt_pair = '_'.join(events[iloc:iloc+2])
         if locs[iloc+1]-locs[iloc] <= wait_window:
             transition[evt_pair] = transition.setdefault(evt_pair,0) + 1
-    
+    transition['warm'] = len(warm['locs'])
+    transition['cold'] = len(cold['locs'])
     return transition
 
+def ENSO_skewness(nino34):
+    import util.stat
+    return util.stat.skewness(nino34)
 
+def Threshold2Composite(field,nino34,warm_thres,cold_thres):
+    '''Threshold only '''
+    import numpy
+    import util
+    data = field[numpy.logical_or(nino34.data>warm_thres,nino34.data<cold_thres)]
+    time = field.getTime()[numpy.logical_or(nino34.data>warm_thres,nino34.data<cold_thres)]
+    itime = data.getCAxes().index('T')
+    data.dims[itime].data = time
+    return data

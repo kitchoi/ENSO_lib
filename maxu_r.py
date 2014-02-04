@@ -2,7 +2,7 @@ import numpy
 import util
 import pylab
 
-def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value'):
+def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value',sign=None):
     ''' Return the index where U is maximum after applying
     a lon_width degree running mean along the longitude.
     Assumed uniform grid
@@ -12,13 +12,23 @@ def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value'):
     else:
         utmp = u.getRegion(**region)
     
-    runaveu = utmp.wgt_ave('Y').runave(lon_width,'X').data.squeeze()
-    index = numpy.abs(runaveu) == numpy.abs(runaveu).max()
+    if sign is None: 
+        sign = numpy.sign(utmp.data)
+    else:
+        assert sign.ndim == 1 
+        sign_shape = [ 1 if utmp.data.shape[i] != len(sign) else utmp.data.shape[i] 
+                       for i in range(utmp.data.ndim)]
+        sign = numpy.sign(sign.reshape(sign_shape))
+    
+    runaveu = (utmp*sign).wgt_ave('Y').runave(lon_width,'X').squeeze()
+    ixaxis = runaveu.getCAxes().index('X')
     if option == 'loc':
-        return u.getLongitude()[index][0]
+        index = numpy.ma.apply_along_axis(numpy.ma.argmax,ixaxis,runaveu.data)
+        return u.getLongitude()[index]
     elif option == 'value':
-        return runaveu[index][0]
-
+        return util.nc.Variable(data=\
+                           numpy.ma.apply_along_axis(numpy.ma.max,ixaxis,runaveu.data)*sign.squeeze(),
+                                parent=runaveu)
 
 def max_anom_loc(u,*args,**kwargs):
     ''' Return the longitude where U is maximum after applying
@@ -64,7 +74,7 @@ def plot_r(y,x,doPlot=True,*args,**kwargs):
     y = [ a[0] for a in yx ]
     x = [ a[1] for a in yx ]
     if doPlot:
-        pylab.plot(x,y,*args,**kwargs)
+        #pylab.plot(x,y,*args,**kwargs)
         pylab.scatter(x,y)
     return (s_pos - s_neg)/(s_pos + s_neg)
 
