@@ -67,7 +67,7 @@ def findEvents(index,operator,threshold,per=5,window=[-3,3]):
     return pklocs,pks
 
 
-def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4):
+def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4,verbose=False):
     ''' Given a field and Nino3.4 index time series, extract
     the time at which nino34_mid-nino34_tole < nino34 < nino34_mid+nino34_tole
     Then compute the climatology for these snap shots
@@ -93,7 +93,7 @@ def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4):
         return result
     pattern = util.nc.climatology(field[locs])
     pattern.setattr('event_loc',locs.squeeze())
-    print 'Nino 3.4: '+ str(nino34[locs].time_ave().squeeze().data)
+    if verbose: print 'Nino 3.4: '+ str(nino34[locs].time_ave().squeeze().data)
     return pattern
 
 def ENSO_duration(nino34,percentile,thres_std_fraction):
