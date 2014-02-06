@@ -7,27 +7,29 @@ def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value',sign=
     a lon_width degree running mean along the longitude.
     Assumed uniform grid
     '''
+    import keepdims
     if region is None:
         utmp = u.getRegion(lat=lat)
     else:
         utmp = u.getRegion(**region)
     
+    runaveu = utmp.wgt_ave('Y').runave(lon_width,'X').squeeze()
     if sign is None: 
-        sign = numpy.sign(utmp.data)
+        sign = numpy.sign(runaveu.data)
     else:
         assert sign.ndim == 1 
-        sign_shape = [ 1 if utmp.data.shape[i] != len(sign) else utmp.data.shape[i] 
-                       for i in range(utmp.data.ndim)]
+        sign_shape = [ 1 if i != len(sign) else len(sign) 
+                       for i in runaveu.data.shape]
         sign = numpy.sign(sign.reshape(sign_shape))
-    
-    runaveu = (utmp*sign).wgt_ave('Y').runave(lon_width,'X').squeeze()
+    runaveu *= sign
     ixaxis = runaveu.getCAxes().index('X')
     if option == 'loc':
         index = numpy.ma.apply_along_axis(numpy.ma.argmax,ixaxis,runaveu.data)
         return u.getLongitude()[index]
     elif option == 'value':
-        return util.nc.Variable(data=\
-                           numpy.ma.apply_along_axis(numpy.ma.max,ixaxis,runaveu.data)*sign.squeeze(),
+        return util.nc.Variable(data=numpy.ma.max(runaveu.data,ixaxis)*\
+                                    numpy.ma.max(sign,ixaxis).squeeze(),
+                                dims=[d for d in runaveu.dims if d.getCAxis() not in 'XY'],
                                 parent=runaveu)
 
 def max_anom_loc(u,*args,**kwargs):
