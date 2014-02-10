@@ -231,3 +231,8 @@ def idealized(amp,x,y,x_loc,y_loc,slope,x_width,y_width,return_Variable=False):
     else:
         return q
 
+
+def y_max(precip,lat,yaxis=-2,ave_axis=-1):
+    import keepdims
+    var_ave = keepdims.mean(precip,axis=ave_axis)
+    return lat[var_ave.argmax(axis=yaxis)].squeeze()
