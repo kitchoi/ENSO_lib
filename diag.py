@@ -7,8 +7,10 @@ def findENSO_percentile(index,percentile):
     if percentile > 50.: percentile = 100. - percentile
     warm = {}
     cold = {}
-    warm['locs'],warm['peaks'] = findEvents(index,'>',numpy.percentile(index,100-percentile))
-    cold['locs'],cold['peaks'] = findEvents(index,'<',numpy.percentile(index,percentile))
+    if not isinstance(index,numpy.ma.core.MaskedArray):
+        index = numpy.ma.array(index)
+    warm['locs'],warm['peaks'] = findEvents(index,'>',numpy.percentile(index[index.mask==0],100-percentile))
+    cold['locs'],cold['peaks'] = findEvents(index,'<',numpy.percentile(index[index.mask==0],percentile))
     return warm,cold
 
 
