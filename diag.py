@@ -1,3 +1,4 @@
+
 def findENSO_percentile(index,percentile):
     ''' percentile < 50.
     warm,cold = findENSO_percentile(nino34,15.)
@@ -82,6 +83,8 @@ def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4,verbose=False):
     import numpy
     import util
     import warnings
+    if (field.dims[0].data != nino34.dims[0].data).any():
+        raise Exception("Expect the time record of nino3.4 and the field to be the same")
     warm,cold = findENSO_percentile(nino34.data,49.)
     locs = warm['locs'] + cold['locs']
     peaks = numpy.append(warm['peaks'],cold['peaks'])
