@@ -14,6 +14,21 @@ def findENSO_percentile(index,percentile):
     cold['locs'],cold['peaks'] = findEvents(index,'<',numpy.percentile(index[index.mask==0],percentile))
     return warm,cold
 
+def findENSO_threshold(index,warm_threshold,cold_threshold):
+    ''' 
+    Using threshold to find ENSO events
+    Return: (warm,cold)
+    warm and cold are dictionaries containing the locations and peak values of the events
+    '''
+    import numpy
+    warm = {}
+    cold = {}
+    if not isinstance(index,numpy.ma.core.MaskedArray):
+        index = numpy.ma.array(index)
+    warm['locs'],warm['peaks'] = findEvents(index,'>',warm_threshold)
+    cold['locs'],cold['peaks'] = findEvents(index,'<',cold_threshold)
+    return warm,cold
+
 
 def findEvents(index,operator,threshold,per=5,window=[-3,3]):
     ''' Return the locations of ENSO warm/cold event peaks for a given index.
@@ -154,3 +169,25 @@ def Threshold2Composite(field,nino34,warm_thres,cold_thres):
     itime = data.getCAxes().index('T')
     data.dims[itime].data = time
     return data
+
+def Seasonal_Locking(pklocs,months):
+    ''' Given the indices of the peak
+    and a list of months, return the count of events in 
+    a particular month (Jan-Dec).
+    The indices of the events should refer to the same 
+    time axis that the months are referring to
+    '''
+    import numpy
+    event_months = months[pklocs]
+    count = numpy.zeros(12)
+    for month in event_months:
+        count[month-1]+=1
+    return count
+
+def Seasonal_Locking_from_nino34(nino34,months,
+                                 findEvents_func=lambda index: findENSO_threshold(index,0.8,-0.8)):
+    assert nino34.shape[0] == months.shape[0]
+    warm,cold = findEvents_func(nino34)
+    warm_count = Seasonal_Locking(warm['locs'],months)
+    cold_count = Seasonal_Locking(cold['locs'],months)
+    return warm_count+cold_count
