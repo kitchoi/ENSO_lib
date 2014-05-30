@@ -25,29 +25,31 @@ def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value',sign=
         utmp = u.getRegion(**region)
     
     runaveu = utmp.runave(lon_width,'X')
-    runaveu *= numpy.sign(sign)
+    runaveu.data *= numpy.sign(sign)
     
-    def max_lon():
+    def max_lon(runaveu):
         runaveu = runaveu.wgt_ave('Y').squeeze()
         index = numpy.ma.apply_along_axis(numpy.ma.argmax,runaveu.getCAxes().index('X'),runaveu.data)
         return runaveu.getLongitude()[index]
     
-    def max_lat():
-        ix,iy = numpy.unravel_index(numpy.ma.argmax(runaveu.data))
-        return runaveu.getLatitude()[iy]
+    def max_lat(runaveu):
+        iyaxis = runaveu.getCAxes().index('Y')
+        indices = numpy.unravel_index(numpy.ma.argmax(runaveu.data),
+                                      runaveu.data.shape)
+        return runaveu.getLatitude()[indices[iyaxis]]
     
-    def max_value():
+    def max_value(runaveu):
         runaveu = runaveu.wgt_ave('Y').squeeze()
         ixaxis = runaveu.getCAxes().index('X')
-        return util.nc.Variable(data=numpy.ma.max(runaveu.data,ixaxis)*\
-                                    numpy.ma.max(sign,ixaxis).squeeze(),
-                                dims=[d for d in runaveu.dims if d.getCAxis() not in 'XY'],
+        return util.nc.Variable(data=numpy.ma.max(runaveu.data,ixaxis)*sign,
+                                dims=[d for d in runaveu.dims
+                                      if d.getCAxis() not in 'XY'],
                                 parent=runaveu)
     funcs = {'lon': max_lon,
              'lat': max_lat,
              'value': max_value}
     
-    return funcs[option]()
+    return funcs[option](runaveu)
             
 
 
