@@ -1,11 +1,22 @@
 import numpy
 import util
 import pylab
+import functools
 
-def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value',sign=None):
+def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value',sign=1.):
     ''' Return the index where U is maximum after applying
     a lon_width degree running mean along the longitude.
+    
     Assumed uniform grid
+    
+    Input:
+    u          - util.nc.Variable
+    lon_width  - width along the longitude for running average
+    lat        - latitudinal band to be averaged over
+    region     - region to be averaged over (default None, overwrites lat if defined)
+    option     - 'lon','lat','value' for finding longitude of maximum, 
+                  latitude of maximum and the maximum value respectively
+    sign       - multiply the data by the sign of this argument
     '''
     import keepdims
     if region is None:
@@ -13,31 +24,48 @@ def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value',sign=
     else:
         utmp = u.getRegion(**region)
     
-    runaveu = utmp.wgt_ave('Y').runave(lon_width,'X').squeeze()
-    if sign is None: 
-        sign = numpy.sign(runaveu.data)
-    else:
-        assert sign.ndim == 1 
-        sign_shape = [ 1 if i != len(sign) else len(sign) 
-                       for i in runaveu.data.shape]
-        sign = numpy.sign(sign.reshape(sign_shape))
-    runaveu *= sign
-    ixaxis = runaveu.getCAxes().index('X')
-    if option == 'loc':
-        index = numpy.ma.apply_along_axis(numpy.ma.argmax,ixaxis,runaveu.data)
-        return u.getLongitude()[index]
-    elif option == 'value':
+    runaveu = utmp.runave(lon_width,'X')
+    runaveu *= numpy.sign(sign)
+    
+    def max_lon():
+        runaveu = runaveu.wgt_ave('Y').squeeze()
+        index = numpy.ma.apply_along_axis(numpy.ma.argmax,runaveu.getCAxes().index('X'),runaveu.data)
+        return runaveu.getLongitude()[index]
+    
+    def max_lat():
+        ix,iy = numpy.unravel_index(numpy.ma.argmax(runaveu.data))
+        return runaveu.getLatitude()[iy]
+    
+    def max_value():
+        runaveu = runaveu.wgt_ave('Y').squeeze()
+        ixaxis = runaveu.getCAxes().index('X')
         return util.nc.Variable(data=numpy.ma.max(runaveu.data,ixaxis)*\
                                     numpy.ma.max(sign,ixaxis).squeeze(),
                                 dims=[d for d in runaveu.dims if d.getCAxis() not in 'XY'],
                                 parent=runaveu)
+    funcs = {'lon': max_lon,
+             'lat': max_lat,
+             'value': max_value}
+    
+    return funcs[option]()
+            
 
-def max_anom_loc(u,*args,**kwargs):
+
+def max_anom_lat(u,*args,**kwargs):
+    ''' Return the latitude where U is maximum after applying
+    a lat_width degree running mean along the longitude.
+    Assumed uniform grid
+    '''
+    kwargs['option'] = 'lat'
+    return max_anom_index(u,*args,**kwargs)
+
+
+def max_anom_lon(u,*args,**kwargs):
     ''' Return the longitude where U is maximum after applying
     a lon_width degree running mean along the longitude.
     Assumed uniform grid
     '''
-    kwargs['option'] = 'loc'
+    kwargs['option'] = 'lon'
     return max_anom_index(u,*args,**kwargs)
 
 def max_anom(u,*args,**kwargs):
