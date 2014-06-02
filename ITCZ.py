@@ -214,6 +214,23 @@ def analysis(var,thres):
     return results
 
 def idealized(amp,x,y,x_loc,y_loc,slope,x_width,y_width,return_Variable=False):
+    ''' Return a 2D numpy array or a util.nc.Variable with a gaussian profile
+    
+    Input:
+    amp     - amplitude of the profile
+    x       - the x axis
+    y       - the y axis
+    x_loc   - x coordinate of the center
+    y_loc   - y coordinate of the center
+    slope   - rotate the gaussian profile to align with a given slope
+              angle to the x axis is arctan(slope)
+    x_width - standard deviation of the profile in the x direction (before rotation)
+    y_width - standard deviation of the profile in the y direction (before rotation)
+    
+    Optional:
+    return_Variable - boolean for whether or not a util.nc.Variable is returned
+    '''
+    
     theta = numpy.arctan(slope)
     if x.ndim ==2 and y.ndim ==2:
         assert x.shape == y.shape
