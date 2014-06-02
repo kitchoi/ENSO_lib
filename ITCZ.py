@@ -6,9 +6,15 @@ def lines(precip,x,y,thres):
     Given precip (numpy.array), x (lon in degree),
     y (lat in degree), locate the ITCZ and SPCZ central
     axis.
-
-    thres - threshold for large precipitation,
-            has to be a function
+    
+    Input:
+    precip - numpy.array
+    x      - numpy.array for longitude
+    y      - numpy.array for latitude
+    thres -  a function that takes precip 
+             as the only argument, the result is used as 
+             the threshold for precipitation
+             e.g. numpy.percentile(precip,70.)
     
     Return {'NP': [slope,intercept],'SP':[slope,intercept]}
     '''
@@ -17,8 +23,8 @@ def lines(precip,x,y,thres):
         precip = numpy.ma.array(precip)
     assert x.shape == y.shape == precip.data.shape
 
-    xselected = x[precip.data > thres(precip.data)]
-    yselected = y[precip.data > thres(precip.data)]
+    xselected = x[precip > thres(precip)]
+    yselected = y[precip > thres(precip)]
 
     # Northern Hemisphere x and y
     NPind = yselected > 0.
@@ -35,10 +41,13 @@ def lines(precip,x,y,thres):
     return results
 
 
-def precipfunc(var):
-    ''' Select the region lat=(-20.,20.), lon=(150.,260.)
-    And perform time average
+def precipfunc(var,region=dict(lat=(-20.,20.),lon=(150.,260.))):
+    ''' Select the region and perform time average
+    
+    Input:
     var - util.nc.Variable
+    region - a dictionary, default: lat=(-20.,20.), lon=(150.,260.)
+    
     Return a util.nc.Variable
     '''
     return var.getRegion(lat=(-20.,20.),
