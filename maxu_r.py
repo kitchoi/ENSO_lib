@@ -41,7 +41,7 @@ def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value',sign=
     def max_value(runaveu):
         runaveu = runaveu.wgt_ave('Y').squeeze()
         ixaxis = runaveu.getCAxes().index('X')
-        return util.nc.Variable(data=numpy.ma.max(runaveu.data,ixaxis)*sign,
+        return util.nc.Variable(data=numpy.array(numpy.ma.max(runaveu.data,ixaxis)*sign),
                                 dims=[d for d in runaveu.dims
                                       if d.getCAxis() not in 'XY'],
                                 parent=runaveu)
@@ -50,8 +50,6 @@ def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value',sign=
              'value': max_value}
     
     return funcs[option](runaveu)
-            
-
 
 def max_anom_lat(u,*args,**kwargs):
     ''' Return the latitude where U is maximum after applying
