@@ -185,9 +185,13 @@ def Seasonal_Locking(pklocs,months):
     return count
 
 def Seasonal_Locking_from_nino34(nino34,months,
-                                 findEvents_func=lambda index: findENSO_threshold(index,0.8,-0.8)):
+                                 findEvents_func=lambda index: findENSO_threshold(index,0.8,-0.8),
+                                 count_warm=True,count_cold=True):
     assert nino34.shape[0] == months.shape[0]
     warm,cold = findEvents_func(nino34)
-    warm_count = Seasonal_Locking(warm['locs'],months)
-    cold_count = Seasonal_Locking(cold['locs'],months)
-    return warm_count+cold_count
+    total_count = 0
+    if count_warm:
+        total_count += Seasonal_Locking(warm['locs'],months)
+    if count_cold:
+        total_count += Seasonal_Locking(cold['locs'],months)
+    return total_count
