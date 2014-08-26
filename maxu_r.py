@@ -93,16 +93,13 @@ def plot_r(y,x,doPlot=True,*args,**kwargs):
     '''
     #maxu = numpy.array([max_anom(u) for u in u_list])
 
-    y = numpy.append(y,0.)
-    x = numpy.append(x,0.)
-    
     assert len(y) == len(x)
-    yx = numpy.array(zip(y,x),dtype=[('y','f4'),('x','f4')])
-    yx = numpy.sort(yx,order='x')
+    #yx = numpy.array(zip(y,x),dtype=[('y','f4'),('x','f4')])
+    #yx = numpy.sort(yx,order='x')
     s_neg = numpy.polyfit(x[x<=0],y[x<=0],1)[0]
     s_pos = numpy.polyfit(x[x>=0],y[x>=0],1)[0]
-    y = [ a[0] for a in yx ]
-    x = [ a[1] for a in yx ]
+    #y = [ a[0] for a in yx ]
+    #x = [ a[1] for a in yx ]
     if doPlot:
         #pylab.plot(x,y,*args,**kwargs)
         pylab.scatter(x,y)
