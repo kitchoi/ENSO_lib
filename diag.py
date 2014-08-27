@@ -85,9 +85,10 @@ def findEvents(index,operator,threshold,per=5,window=[-3,3]):
     return pklocs,pks
 
 
-def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4,verbose=False):
+def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4,
+                    do_climo=True,verbose=False):
     ''' Given a field and Nino3.4 index time series, extract
-    the time at which nino34_mid-nino34_tole < nino34 < nino34_mid+nino34_tole
+    the time at which nino34_mid-nino34_tole < peak nino34 < nino34_mid+nino34_tole
     Then compute the climatology for these snap shots
     Input:
     field  - util.nc.Variable
@@ -111,7 +112,9 @@ def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4,verbose=False):
         result.data[:] = numpy.ma.masked
         warnings.warn("No event found!")
         return result
-    pattern = util.nc.climatology(field[locs])
+    pattern = field[locs]
+    if do_climo:
+        pattern = util.nc.climatology(pattern)
     pattern.setattr('event_loc',locs.squeeze())
     if verbose: print 'Nino 3.4: '+ str(nino34[locs].time_ave().squeeze().data)
     return pattern
