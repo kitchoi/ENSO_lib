@@ -58,7 +58,7 @@ def findEvents(index,operator,threshold,per=5,window=[-3,3]):
         raise Exception('operator has to be either > or <')
     
     locs = numpy.where(comp_op(index,threshold))[0]
-    if not locs:
+    if len(locs) <= 1:
         return ([],numpy.array([]))
     
     jumps = numpy.where(numpy.diff(locs)>1)[0]
