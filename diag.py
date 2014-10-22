@@ -98,6 +98,9 @@ def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4,
     nino34 - util.nc.Variable
     nino34_mid - mid point
     nino34_tole - half bin size
+    
+    Output:
+    pattern - util.nc.Variable (a climatology)
     '''
     import numpy
     import util
