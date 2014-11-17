@@ -1,10 +1,15 @@
+import numpy
+import warnings
+
+import util.stat as stat
+import util
+
 
 def findENSO_percentile(index,percentile):
     ''' percentile < 50.
     warm,cold = findENSO_percentile(nino34,15.)
     warm and cold are dictionaries containing the locations and peak values of the events
     '''
-    import numpy
     if percentile > 50.: percentile = 100. - percentile
     warm = {}
     cold = {}
@@ -14,13 +19,13 @@ def findENSO_percentile(index,percentile):
     cold['locs'],cold['peaks'] = findEvents(index,'<',numpy.percentile(index[index.mask==0],percentile))
     return warm,cold
 
+
 def findENSO_threshold(index,warm_threshold,cold_threshold):
     ''' 
     Using threshold to find ENSO events
     Return: (warm,cold)
     warm and cold are dictionaries containing the locations and peak values of the events
     '''
-    import numpy
     warm = {}
     cold = {}
     if not isinstance(index,numpy.ma.core.MaskedArray):
@@ -28,6 +33,36 @@ def findENSO_threshold(index,warm_threshold,cold_threshold):
     warm['locs'],warm['peaks'] = findEvents(index,'>',warm_threshold)
     cold['locs'],cold['peaks'] = findEvents(index,'<',cold_threshold)
     return warm,cold
+
+
+def Persistence_check(is_selected,per):
+    ''' Return a numpy boolean array of the same shape of is_selected
+    where True indicating an active, persistent event
+    is_selected- a numpy boolean array
+    per     - persistence required
+    '''
+    assert len(is_selected) > 0
+    assert is_selected.dtype == numpy.bool
+    if not numpy.any(is_selected):
+        return is_selected
+    is_filtered = numpy.zeros_like(is_selected,dtype=numpy.bool)
+    in_event = 0
+    n_select = 0
+    i_start = 0
+    for i,selected in enumerate(is_selected):
+        if selected:
+            n_select += 1
+            if not in_event:
+                # going from normal to selected
+                i_start = i
+            in_event = 1
+        else:
+            if in_event and n_select >= per:
+                is_filtered[i_start:i-1] = True
+            i_start = i
+            n_select = 0
+            in_event = 0
+    return is_filtered
 
 
 def findEvents(index,operator,threshold,per=5,window=[-3,3]):
@@ -43,9 +78,6 @@ def findEvents(index,operator,threshold,per=5,window=[-3,3]):
     pklocs      - location in the input array
     pks         - values of extrema
     '''
-    import numpy
-    import util.stat as stat
-    
     if operator == '>':
         argpeak_op = numpy.argmax
         comp_op = numpy.greater
@@ -102,9 +134,6 @@ def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4,
     Output:
     pattern - util.nc.Variable (a climatology)
     '''
-    import numpy
-    import util
-    import warnings
     if (field.dims[0].data != nino34.dims[0].data).any():
         raise Exception("Expect the time record of nino3.4 and the field to be the same")
     warm,cold = findENSO_percentile(nino34.data,49.)
@@ -125,8 +154,8 @@ def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4,
     if verbose: print 'Nino 3.4: '+ str(nino34[locs].time_ave().squeeze().data)
     return pattern
 
+
 def ENSO_duration(nino34,percentile,thres_std_fraction):
-    import numpy
     warm,cold = findENSO_percentile(nino34,percentile)
     warm_end = nino34.std()*thres_std_fraction
     cold_end = warm_end*-1
@@ -149,8 +178,8 @@ def ENSO_duration(nino34,percentile,thres_std_fraction):
     duration['cold'] = compute_duration(numpy.greater,cold['locs'],cold_end)
     return duration
 
+
 def ENSO_transition(nino34,percentile,wait_window,per=5,window=[-3,3]):
-    import numpy
     warm,cold = findENSO_percentile(nino34,percentile)
     events = ['warm',]*len(warm['locs'])+['cold',]*len(cold['locs'])
     events_locs = sorted(zip(events,warm['locs']+cold['locs']),key=lambda v:v[1])
@@ -165,19 +194,19 @@ def ENSO_transition(nino34,percentile,wait_window,per=5,window=[-3,3]):
     transition['cold'] = len(cold['locs'])
     return transition
 
+
 def ENSO_skewness(nino34):
-    import util.stat
-    return util.stat.skewness(nino34)
+    return stat.skewness(nino34)
+
 
 def Threshold2Composite(field,nino34,warm_thres,cold_thres):
     '''Threshold only '''
-    import numpy
-    import util
     data = field[numpy.logical_or(nino34.data>warm_thres,nino34.data<cold_thres)]
     time = field.getTime()[numpy.logical_or(nino34.data>warm_thres,nino34.data<cold_thres)]
     itime = data.getCAxes().index('T')
     data.dims[itime].data = time
     return data
+
 
 def Seasonal_Locking(pklocs,months):
     ''' Given the indices of the peak
@@ -186,12 +215,12 @@ def Seasonal_Locking(pklocs,months):
     The indices of the events should refer to the same 
     time axis that the months are referring to
     '''
-    import numpy
     event_months = months[pklocs]
     count = numpy.zeros(12)
     for month in event_months:
         count[month-1]+=1
     return count
+
 
 def Seasonal_Locking_from_nino34(nino34,months,
                                  findEvents_func=lambda index: findENSO_threshold(index,0.8,-0.8),
