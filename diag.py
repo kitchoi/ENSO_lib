@@ -143,7 +143,7 @@ def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4,
     Output:
     pattern - util.nc.Variable (a climatology)
     '''
-    if numpy.allclose(field.getTime(),nino34.getTime()):
+    if not numpy.allclose(field.getTime(),nino34.getTime()):
         raise Exception("Expect the time record of nino3.4 and the field to be the same")
     warm,cold = findENSO_percentile(nino34.data,49.)
     locs = warm['locs'] + cold['locs']
