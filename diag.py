@@ -151,8 +151,10 @@ def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4,
     locs = numpy.array(locs)[ numpy.abs(peaks - nino34_mid)
                                 < nino34_tole]
     if len(locs) == 0: 
-        result = util.nc.Variable(data=numpy.ma.ones(field[0].data.shape),
-                                  parent=field[0])
+        field_sliced_time = field.getRegion(time=slice(0,1))
+        result = util.nc.Variable(data=numpy.ma.ones(field_sliced_time.\
+                                                     data.shape),
+                                  parent=field_sliced_time)
         result.data[:] = numpy.ma.masked
         warnings.warn("No event found!")
         return result
