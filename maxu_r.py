@@ -99,8 +99,8 @@ def find_max_u_nino3_pairs(u_ref,nino3,lon_width=40.,lat=(-2.,2.)):
     pos_lon = max_anom_lon(pos_regress)
     # Negative nino3
     neg_slice = nino3.data < 0.
-    neg_regress = compute_var1_var2_regress(u_ref.getRegion(time=neg_slice),
-                                            nino3.getRegion(time=neg_slice))
+    neg_regress = util.nc.regress(u_ref.getRegion(time=neg_slice),
+                                  nino3.getRegion(time=neg_slice))
     neg_lon = max_anom_lon(neg_regress,lon_width=lon_width,lat=lat)
     u_regional = u_ref.getRegion(lon=(pos_lon-lon_width/2.,pos_lon+lon_width/2.),lat=lat).area_ave().data.squeeze()
     pos_u = u_regional[pos_slice]
