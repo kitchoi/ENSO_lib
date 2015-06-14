@@ -110,9 +110,6 @@ def find_max_u_nino3_pairs(u_ref,nino3,lon_width=40.,lat=(-2.,2.)):
     return (pos_u,pos_t),(neg_u,neg_t)
 
 
-def find_max_u_and_t(u_ref,nino3):
-    
-
 def plot_r(y,x,doPlot=True,*args,**kwargs):
     ''' Plot (if doPlot is True) the results and compute 
     the value of r using
