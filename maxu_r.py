@@ -3,6 +3,7 @@ import util
 import pylab
 import functools
 
+
 def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value',sign=1.):
     ''' Return the index where U is maximum after applying
     a lon_width degree running mean along the longitude.
@@ -51,6 +52,7 @@ def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value',sign=
     
     return funcs[option](runaveu)
 
+
 def max_anom_lat(u,*args,**kwargs):
     ''' Return the latitude where U is maximum after applying
     a lat_width degree running mean along the longitude.
@@ -68,6 +70,7 @@ def max_anom_lon(u,*args,**kwargs):
     kwargs['option'] = 'lon'
     return max_anom_index(u,*args,**kwargs)
 
+
 def max_anom(u,*args,**kwargs):
     ''' Return the maximum U after applying a lon_width degree 
     running mean along the longitude.  Assumed uniform grid.
@@ -79,13 +82,43 @@ def max_anom(u,*args,**kwargs):
     kwargs['option'] = 'value'
     return max_anom_index(u,*args,**kwargs)
 
+
+def find_max_u_nino3_pairs(u_ref,nino3,lon_width=40.,lat=(-2.,2.)):
+    ''' Find the pair of (u_ref, nino3) for warm and cold conditions
+    after locating the longitude where the regression is largest for 
+    each condition 
+    
+    Return:
+    ( pos_u, pos_t ), ( neg_u, neg_t)
+    pos_u, pos_t, neg_u and neg_t are all numpy 1d array
+    '''
+    # Positive nino3
+    pos_slice = nino3.data > 0.
+    pos_regress = util.nc.regress(u_ref.getRegion(time=pos_slice),
+                                  nino3.getRegion(time=pos_slice))
+    pos_lon = max_anom_lon(pos_regress)
+    # Negative nino3
+    neg_slice = nino3.data < 0.
+    neg_regress = compute_var1_var2_regress(u_ref.getRegion(time=neg_slice),
+                                            nino3.getRegion(time=neg_slice))
+    neg_lon = max_anom_lon(neg_regress,lon_width=lon_width,lat=lat)
+    u_regional = u_ref.getRegion(lon=(pos_lon-lon_width/2.,pos_lon+lon_width/2.),lat=lat).area_ave().data.squeeze()
+    pos_u = u_regional[pos_slice]
+    neg_u = u_regional[neg_slice]
+    pos_t = nino3.data[pos_slice]
+    neg_t = nino3.data[neg_slice]
+    return (pos_u,pos_t),(neg_u,neg_t)
+
+
+def find_max_u_and_t(u_ref,nino3):
+    
+
 def plot_r(y,x,doPlot=True,*args,**kwargs):
-    ''' Read a list of variable, apply maxu_anom to each of them
-    to find the maximum.  Plot (if doPlot is True) the results and compute 
+    ''' Plot (if doPlot is True) the results and compute 
     the value of r using
     linear regression.
     Input:
-    y      - a numpy array
+    y      - a numpy 1d array
     x      - x axis (default = [ -len(u_list)/2,...,1,0,-1,...-len(u_list)/2 ]
     Return: 
     r = 
@@ -93,7 +126,8 @@ def plot_r(y,x,doPlot=True,*args,**kwargs):
     '''
     #maxu = numpy.array([max_anom(u) for u in u_list])
 
-    assert len(y) == len(x)
+    if len(y) != len(x):
+        raise ValueError("Length of y should match that of x")
     #yx = numpy.array(zip(y,x),dtype=[('y','f4'),('x','f4')])
     #yx = numpy.sort(yx,order='x')
     s_neg = numpy.polyfit(x[x<=0],y[x<=0],1)[0]
