@@ -287,7 +287,8 @@ def ENSO_transition2(nino34,percentile,wait_window,thres_std_fraction,
         transition['cold_warm'] = float(len(LNENind))/nLN
         transition['cold_cold'] = float(len(LNLNind))/nLN
     return transition,dict(ENLN=ENLNind,ENEN=ENENind,
-                           LNEN=LNENind,LNLN=LNLNind)
+                           LNEN=LNENind,LNLN=LNLNind),\
+        warm["locs"],cold["locs"]
 
 
 
