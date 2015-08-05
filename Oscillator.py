@@ -35,7 +35,7 @@ def wind(temp,gam,r,
         u = coldseasonal[mon-1]*(gam-r)*temp
     return u
 
-def dT(h,T,a,b,e):
+def dT_func(h,T,a,b,e):
     ''' dT = a*h-b*T-e*(T^3.) '''
     import numpy
     return a*h-b*T-e*numpy.power(T,3.)
@@ -61,7 +61,7 @@ def oscillator(tstep,a,b,c,d,e,gam,r,
     h_fast = [h0,]*nlag_short
     while True:
         h_now = h_slow.pop() + h_fast.pop()
-        dT = dT(h=h_now,T=T,a=a,b=b,e=e)
+        dT = dT_func(h=h_now,T=T,a=a,b=b,e=e)
         yield T
         T += dT*tstep
         mon = int(istep*tstep % 12) + 1
