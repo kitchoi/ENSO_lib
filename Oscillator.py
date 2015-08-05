@@ -45,33 +45,32 @@ def LagTime(ck,cr,x_W,x_E,x_force,dx=0.):
     lag_long = (x_force - x_W)*1100./cr/864./30.+(x_E-x_W)*1100./ck/864./30.
     return lag_short,lag_long
 
-def oscillator(tstep,params):
+def oscillator(tstep,a,b,c,d,e,gam,r,
+               lag_long,lag_short,
+               T0,h0,noise_generator,
+               warmseasonal=None,coldseasonal=None):
     '''
     
     '''
     import numpy
     istep = 0
-    nlag_long = int(params['lag_long']/tstep)
-    nlag_short = int(params['lag_short']/tstep)
-    T = params['T0']
-    h_slow = [params['h0'],]*nlag_long
-    h_fast = [params['h0'],]*nlag_short
-    f_dT = params['dT_func']
-    f_wind = params['wind_func']
-    f_noise = params['noise_func']
+    nlag_long = int(lag_long/tstep)
+    nlag_short = int(lag_short/tstep)
+    T = T0
+    h_slow = [h0,]*nlag_long
+    h_fast = [h0,]*nlag_short
     while True:
         h_now = h_slow.pop() + h_fast.pop()
-        dT = f_dT(h=h_now,T=T,
-                  a=params['a'],b=params['b'],e=params['e'])
+        dT = dT(h=h_now,T=T,a=a,b=b,e=e)
         yield T
         T += dT*tstep
         mon = int(istep*tstep % 12) + 1
         if istep*tstep % 1 < tstep*2:
-            noise = f_noise()
-        u = f_wind(temp=T,gam=params['gam'],r=params['r'],
-                   warmseasonal=params['warmseasonal'],
-                   coldseasonal=params['coldseasonal'],
-                   mon=mon) + noise
-        h_fast.insert(0,params['c']*u)
-        h_slow.insert(0,params['d']*u*-1.)
+            noise = noise_generator()
+        u = wind(temp=T,gam=gam,r=r,
+                 warmseasonal=warmseasonal,
+                 coldseasonal=coldseasonal,
+                 mon=mon) + noise
+        h_fast.insert(0,c*u)
+        h_slow.insert(0,d*u*-1.)
         istep += 1
