@@ -47,7 +47,7 @@ def LagTime(ck,cr,x_W,x_E,x_force,dx=0.):
 
 def oscillator(tstep,a,b,c,d,e,gam,r,
                lag_long,lag_short,
-               T0,h0,noise_generator,
+               T0,h0,noise_generator,noise_update_freq=0.2,
                warmseasonal=None,coldseasonal=None):
     '''
     
@@ -65,7 +65,7 @@ def oscillator(tstep,a,b,c,d,e,gam,r,
         yield T
         T += dT*tstep
         mon = int(istep*tstep % 12) + 1
-        if istep*tstep % 1 < tstep*2:
+        if istep % int(noise_update_freq/tstep) == 0:
             noise = noise_generator()
         u = wind(temp=T,gam=gam,r=r,
                  warmseasonal=warmseasonal,
