@@ -2,6 +2,7 @@ import numpy
 import util
 import pylab
 import functools
+import geodat.keepdims as keepdims
 
 
 def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value',sign=1.):
@@ -19,7 +20,6 @@ def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value',sign=
                   latitude of maximum and the maximum value respectively
     sign       - multiply the data by the sign of this argument
     '''
-    import keepdims
     if region is None:
         utmp = u.getRegion(lat=lat)
     else:

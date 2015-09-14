@@ -1,5 +1,9 @@
 import numpy
-import util
+import geodat
+import geodat.keepdims as keepdims
+import geodat.stat
+import scipy.ndimage.interpolation
+
 
 def lines(precip,x,y,thres):
     '''
@@ -45,10 +49,10 @@ def precipfunc(var,region=dict(lat=(-20.,20.),lon=(150.,260.))):
     ''' Select the region and perform time average
     
     Input:
-    var - util.nc.Variable
+    var - geodat.nc.Variable
     region - a dictionary, default: lat=(-20.,20.), lon=(150.,260.)
     
-    Return a util.nc.Variable
+    Return a geodat.nc.Variable
     '''
     return var.getRegion(lat=(-20.,20.),
                          lon=(150.,260.)).time_ave().squeeze()
@@ -64,7 +68,6 @@ def ITCZ_lat_x(var,lon,lat,axis=-2,weighted=True):
     lon - numpy.array
     lat - numpy.array
     '''
-    import keepdims
     assert var.shape[-1] == len(lon)
     assert var.shape[-2] == len(lat)
     assert type(axis) is int
@@ -110,11 +113,10 @@ def x0(var,lon,lat):
     ''' Given the var (numpy.ndarray), lon (numpy.array),
     lat (numpy.array), find the longitude of the ITCZ/SPCZ
     '''
-    import util.stat
     assert var.ndim == 2
     assert var.shape[0] == len(lat)
     assert var.shape[1] == len(lon)
-    varave = util.stat.runave(var,10,axis=-1)
+    varave = geodat.stat.runave(var,10,axis=-1)
     x0 = {}
     # Northern
     varaveNP = varave[lat>0,:].mean(axis=0)
@@ -163,7 +165,6 @@ def width(var,lon,lat,thres):
     
     '''
     # Get the slopes and intercepts for the ITCZ and SPCZ
-    import scipy.ndimage.interpolation
     central_axes = lines(var,lon,lat,thres)
     widths = {}
     for key,value in central_axes.items():
@@ -188,7 +189,7 @@ def width(var,lon,lat,thres):
     return widths
 
 def analysis(var,thres):
-    ''' Given var (util.nc.variable), perform an analysis on the ITCZ pattern
+    ''' Given var (geodat.nc.variable), perform an analysis on the ITCZ pattern
     Return:
     { 'NP': dict(key=['y0','x0','width','slope','y-intercept','amp'])
       'SP' : same as above }
@@ -198,7 +199,7 @@ def analysis(var,thres):
           slope,y-intercept gives the location of the ITCZ/SPCZ as
           lat = y-intercept + slope * lon
     Input:
-    var - util.nc.Variable
+    var - geodat.nc.Variable
     thres - a function that takes var data and return the threshold
     '''
     y0_ans = y0(var.data,var.getLongitude(),var.getLatitude())
@@ -214,7 +215,7 @@ def analysis(var,thres):
     return results
 
 def idealized(amp,x,y,x_loc,y_loc,slope,x_width,y_width,return_Variable=False):
-    ''' Return a 2D numpy array or a util.nc.Variable with a gaussian profile
+    ''' Return a 2D numpy array or a geodat.nc.Variable with a gaussian profile
     
     Input:
     amp     - amplitude of the profile
@@ -228,7 +229,7 @@ def idealized(amp,x,y,x_loc,y_loc,slope,x_width,y_width,return_Variable=False):
     y_width - standard deviation of the profile in the y direction (before rotation)
     
     Optional:
-    return_Variable - boolean for whether or not a util.nc.Variable is returned
+    return_Variable - boolean for whether or not a geodat.nc.Variable is returned
     '''
     
     theta = numpy.arctan(slope)
@@ -248,17 +249,16 @@ def idealized(amp,x,y,x_loc,y_loc,slope,x_width,y_width,return_Variable=False):
     #if amp_sum is not None:
     #    print "q_sum = {:.2f} and amp_sum = {:.2f}".format(q.sum(),amp_sum)
     if return_Variable:
-        newvar = util.nc.Variable(data=q,varname="Q",
-                                  dims=[util.nc.Dimension(data=y[:,0],
-                                                          dimname='LAT',units='degrees_N'),
-                                        util.nc.Dimension(data=x[0,:],
-                                                          dimname='LON',units='degrees_E')])
+        newvar = geodat.nc.Variable(data=q,varname="Q",
+                                    dims=[geodat.nc.Dimension(data=y[:,0],
+                                                            dimname='LAT',units='degrees_N'),
+                                          geodat.nc.Dimension(data=x[0,:],
+                                                            dimname='LON',units='degrees_E')])
         return newvar
     else:
         return q
 
 
 def y_max(precip,lat,yaxis=-2,ave_axis=-1):
-    import keepdims
     var_ave = keepdims.mean(precip,axis=ave_axis)
     return lat[var_ave.argmax(axis=yaxis)].squeeze()
