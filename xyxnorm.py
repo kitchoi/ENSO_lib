@@ -1,6 +1,8 @@
-import util
 import numpy
 import pylab
+
+import geodat
+import geodat.plot
 
 def NINO34_Pattern(field,nino34,factors,nino34_ref,nino34_tole):
     ''' Given a field and a nino3.4 index, group the snapshot of the
@@ -8,8 +10,8 @@ def NINO34_Pattern(field,nino34,factors,nino34_ref,nino34_tole):
     nino34_ref*factor - nino34_tole < nino34 < nino34_ref*factor
     + nino34_tole
     Input
-    field  - a util.nc.Variable of shape: (TIME,...)
-    nino34 - a util.nc.Variable of shape: (TIME)
+    field  - a geodat.nc.Variable of shape: (TIME,...)
+    nino34 - a geodat.nc.Variable of shape: (TIME)
     factors - a dictionary { casename : factor }
     nino34_ref - a scalar
     nino34_tole - a scalar
@@ -32,7 +34,7 @@ def plot_Patterns(pattern,name,prefix,root='../'):
       Print to root/figures/prefix.name_casename.eps
       '''
     for casename in factors.keys():
-        pylab.figure(); util.nc.contourf((pattern[casename]).time_ave());
+        pylab.figure(); geodat.nc.contourf((pattern[casename]).time_ave());
         pylab.colorbar(orientation='horizontal')
         pylab.title(pattern[casename].getattr('long_name'))
         pylab.colorbar()
@@ -57,7 +59,7 @@ def Estimate_u_star(precip,sphum,div_u):
     L_x = x_up - x_dn
     p_prime = (precip.getRegion(lon=x_up,lat=(-5.,5.)) - precip.getRegion(lon=x_dn,lat=(-5.,5.))).squeeze()
     if 'Z' in sphum.getCAxes():
-        q_prime = util.nc.integrate(sphum.getRegion(lon=x_up,level=slice(-3,None)),sphum.getCAxes().index('Z')).squeeze() + util.nc.integrate(sphum.getRegion(lon=x_dn,level=slice(-3,None)),sphum.getCAxes().index('Z')).squeeze()
+        q_prime = geodat.nc.integrate(sphum.getRegion(lon=x_up,level=slice(-3,None)),sphum.getCAxes().index('Z')).squeeze() + geodat.nc.integrate(sphum.getRegion(lon=x_dn,level=slice(-3,None)),sphum.getCAxes().index('Z')).squeeze()
     else: 
         q_prime = (sphum.getRegion(lon=x_up) + sphum.getRegion(lon=x_dn)).squeeze()
     q_prime = q_prime*100./10.
@@ -124,15 +126,14 @@ def plot_dictionary(xaxis,var,sortedkeys=None,
     If the value of a keyword argument is a dictionary, it is matched with the dictionary var.
     Otherwise it is assumed general for all lines.
     '''
-    import plot
     if sortedkeys is None: sortedkeys = var.keys()
     for key in sortedkeys:
         kw = { arg: kwargs[arg][key] if type(kwargs[arg]) is dict else kwargs[arg]
                for arg in kwargs.keys() }
         pylab.plot(xfunc(xaxis[key]),yfunc(var[key]),label=key,**kw)
     
-    plot.template.default()
-    if legend: l = plot.reorderlegend(sortedkeys)
+    geodat.plot.template.default()
+    if legend: l = geodat.plot.reorderlegend(sortedkeys)
     
     #l.set(prop={'size':10})
 
@@ -157,16 +158,16 @@ def plot_tyave(var,factors,func=lambda v: v.wgt_ave('TY').squeeze(),
 
 def save4gill(field,filename,NY=256):
     '''
-    field - an instance of util.nc.Variable
+    field - an instance of geodat.nc.Variable
     '''
     import sphere_grid.grid_func as sphere_grid
-    ref_var = util.nc.getvar('../input/t170/gill.nc','heating')
-    regridded = util.nc.pyferret_regrid(field,ref_var,'XY')#2*NY,NY)
+    ref_var = geodat.nc.getvar('../input/t170/gill.nc','heating')
+    regridded = geodat.nc.pyferret_regrid(field,ref_var,'XY')#2*NY,NY)
     regridded.varname = 'Q'
     regridded.attributes['history'] = '' # remove history
     regridded.ensureMasked()
     regridded.data[regridded.data.mask] = 0.
-    util.nc.savefile(filename,regridded,overwrite=True)
+    geodat.nc.savefile(filename,regridded,overwrite=True)
 
 
 def proper_filename(casename):
@@ -179,22 +180,22 @@ def proper_filename(casename):
 
 
 def dudx_qc(u,q,dx):
-    conform_region = util.nc.conform_region(u,q)
+    conform_region = geodat.nc.conform_region(u,q)
     def conform(var):
         var.data[var.data.mask] = 0.
-        var = util.nc.regrid(var,360,180)
+        var = geodat.nc.regrid(var,360,180)
         return var.getRegion(**conform_region)
     u = conform(u)
     q = conform(q)
-    return util.nc.gradient(u,dx).runave(2,dx)*q
+    return geodat.nc.gradient(u,dx).runave(2,dx)*q
 
 def region_regrid(var,region,nlon=360,nlat=180):
     var.data[var.data.mask] = 0.
-    var = util.nc.regrid(var,nlon,nlat).getRegion(**region)
+    var = geodat.nc.regrid(var,nlon,nlat).getRegion(**region)
     return var
 
 def conform(var1,var2,nlon=360,nlat=180):
-    region = util.nc.conform_region(var1,var2)
+    region = geodat.nc.conform_region(var1,var2)
     var1 = region_regrid(var1,region,nlon,nlat)
     var2 = region_regrid(var2,region,nlon,nlat)
     return var1,var2
@@ -204,8 +205,8 @@ def normalize_ax(var,ref,ax):
     ''' Normalize variable (var) with the magnitude of the reference field (ref)
     averaged along the axis ax
     Input:
-    var -- util.nc.Variable
-    ref -- util.nc.Variable
+    var -- geodat.nc.Variable
+    ref -- geodat.nc.Variable
     ax  -- string. e.g.: "TY","Y","X"
     '''
     return var/var.wgt_ave(ax)*ref.wgt_ave(ax)
@@ -236,7 +237,7 @@ def xyxnorm_anom(var,ref,ax='xyx',ref_profile=None,npart=50,nstop=1000,
     if animate_func is None:
         def animate(var,wait=wait):
             import time
-            util.nc.contourf(var)
+            geodat.nc.contourf(var)
             pylab.show()
             time.sleep(wait)
     else:
@@ -326,7 +327,7 @@ def yshuffle_rank(var,ref):
             #ratio = oldcoslat/coslat[:,ilon]
             #rearranged[itime,:,ilon] *= ratio
     
-    return util.nc.Variable(data=rearranged,parent=var,varname=var.varname+'_y_shuffled',history='Shuffled in y direction using '+ref.varname)
+    return geodat.nc.Variable(data=rearranged,parent=var,varname=var.varname+'_y_shuffled',history='Shuffled in y direction using '+ref.varname)
 
 
 def yshuffle_rank_anom(var,ref,ref_pos=None,ref_anom=None):
@@ -364,7 +365,7 @@ def xshuffle_rank(var,ref):
             #ratio = oldcoslat/coslat
             #rearranged[itime,...] *= ratio
     
-    return util.nc.Variable(data=rearranged,parent=var,varname=var.varname+'_x_shuffled',history='Shuffled in x direction using '+ref.varname)
+    return geodat.nc.Variable(data=rearranged,parent=var,varname=var.varname+'_x_shuffled',history='Shuffled in x direction using '+ref.varname)
 
 def xshuffle_rank_anom(var,ref,ref_pos=None,ref_anom=None):
     ''' 
@@ -477,7 +478,7 @@ def shuffle_rank(var,ref):
         coslat_new = coslat.ravel().reshape(var.data[itime,...].shape)
         #ratio = oldcoslat/coslat_new
         #rearranged[itime,...] *= ratio
-    return util.nc.Variable(data=rearranged,parent=var,varname=var.varname+'_shuffled',history='Shuffled using '+ref.varname)
+    return geodat.nc.Variable(data=rearranged,parent=var,varname=var.varname+'_shuffled',history='Shuffled using '+ref.varname)
 
 def shuffle_rank_anom(var,ref,ref_pos=None,ref_anom=None):
     ''' 
@@ -510,7 +511,7 @@ def movement(var,delta,ax):
     axis = var.dims[iaxis].data
     ndelta = int(delta/numpy.abs(numpy.diff(axis)).mean())
     newdata = numpy.roll(var.data,ndelta,iaxis)
-    return util.nc.Variable(data=newdata,parent=var,history="Rolled along axis "+ax+" by "+str(delta))
+    return geodat.nc.Variable(data=newdata,parent=var,history="Rolled along axis "+ax+" by "+str(delta))
 
 
 def threshold_region(t,land_mask,t_thres=27.,
@@ -549,7 +550,7 @@ def fill_precip(temp,precip_c,land_mask,temp_thres,region):
     '''
     # find region of precipitating temperature
     precip_region,lon,lat = threshold_region(temp,land_mask,temp_thres,region)
-    ones = util.nc.Variable(data=numpy.ones(precip_region.shape),
+    ones = geodat.nc.Variable(data=numpy.ones(precip_region.shape),
                             parent=temp.getRegion(**region))
     total_area= ones.wgt_ave(axis=[-2,-1])
     ones[~precip_region] = 0.
@@ -605,12 +606,12 @@ def gilloutput_nonlinear(panel,model,field,ref_panel='P',normalize=False):
 
 
 def NDJF(var):
-    ''' Return util.nc.TimeSlices(var,11.,2.,'m')
+    ''' Return geodat.nc.TimeSlices(var,11.,2.,'m')
     '''
-    return util.nc.TimeSlices(var,11.,2.,'m')
+    return geodat.nc.TimeSlices(var,11.,2.,'m')
 
 
 def MJJA(var):
-    ''' Return util.nc.TimeSlices(var,5.,8.,'m')
+    ''' Return geodat.nc.TimeSlices(var,5.,8.,'m')
     '''
-    return util.nc.TimeSlices(var,5.,8.,'m')
+    return geodat.nc.TimeSlices(var,5.,8.,'m')
