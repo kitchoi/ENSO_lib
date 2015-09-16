@@ -1,10 +1,11 @@
-import util
 import numpy
 import pylab
 
+import geodat
+
 def zonal_dev(var):
     ''' Return zonal asymmetric component
-    Input: var - a util.nc.Variable instance
+    Input: var - a geodat.nc.Variable instance
     '''
     var.ensureMasked()
     var2 = var - var.zonal_ave()
@@ -15,7 +16,7 @@ def dotproduct(var1,var2):
     ''' Return the dotproduct of two variables.
     Dot Product = Area average of (Var1 * Var2)
     Var1 and Var2 are assumed to be (lat,lon)
-    Input: var1,var2 - util.nc.Variable instances
+    Input: var1,var2 - geodat.nc.Variable instances
     Output: Scalar (masked)
     '''
     var1.ensureMasked()
@@ -25,7 +26,7 @@ def dotproduct(var1,var2):
 def norm(var):
     ''' Return the norm of a variable
     Norm = root-mean-square value of the field
-    Input: var - a util.nc.Variable instance
+    Input: var - a geodat.nc.Variable instance
     Output: Scalar (masked)
     '''
     absvar = dotproduct(var,var)
@@ -35,7 +36,7 @@ def norm(var):
 
 def normalize_abs(var):
     ''' Return a normalized field
-    Input: var - a util.nc.Variable instance
+    Input: var - a geodat.nc.Variable instance
     Output: var/norm(var)
     '''
     var.ensureMasked()
@@ -45,12 +46,12 @@ def normalize_abs(var):
 def mask_per(var,per):
     ''' Absolute values smaller than per*range_of_var/2. will be masked away
     Input:
-    var - util.nc.Variable
+    var - geodat.nc.Variable
     per - percentage
     '''
     var.ensureMasked()
     small = per_range(var.data,per)
-    newvar = util.nc.Variable(data=mask_small_numpy(var.data,small),parent=var,
+    newvar = geodat.nc.Variable(data=mask_small_numpy(var.data,small),parent=var,
                               history='Masked '+str(per)+' percentage of range')
     
     return newvar
@@ -58,11 +59,11 @@ def mask_per(var,per):
 def mask_small(var,small):
     ''' Absolute values smaller than the value "small" will be masked away
     Input: 
-    var - an util.nc.Variable
+    var - an geodat.nc.Variable
     small - a positive scalar
     '''
     var.ensureMasked()
-    newvar = util.nc.Variable(data=mask_small_numpy(var.data,small),
+    newvar = geodat.nc.Variable(data=mask_small_numpy(var.data,small),
                               parent=var,
                               history='Masked abs(value) < '+str(small))
     return newvar

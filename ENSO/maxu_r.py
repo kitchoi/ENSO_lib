@@ -1,5 +1,5 @@
 import numpy
-import util
+import geodat
 import pylab
 import functools
 import geodat.keepdims as keepdims
@@ -12,7 +12,7 @@ def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value',sign=
     Assumed uniform grid
     
     Input:
-    u          - util.nc.Variable
+    u          - geodat.nc.Variable
     lon_width  - width along the longitude for running average
     lat        - latitudinal band to be averaged over
     region     - region to be averaged over (default None, overwrites lat if defined)
@@ -42,7 +42,7 @@ def max_anom_index(u,lon_width=40.,lat=(-2.,2.),region=None,option='value',sign=
     def max_value(runaveu):
         runaveu = runaveu.wgt_ave('Y').squeeze()
         ixaxis = runaveu.getCAxes().index('X')
-        return util.nc.Variable(data=numpy.array(numpy.ma.max(runaveu.data,ixaxis)*sign),
+        return geodat.nc.Variable(data=numpy.array(numpy.ma.max(runaveu.data,ixaxis)*sign),
                                 dims=[d for d in runaveu.dims
                                       if d.getCAxis() not in 'XY'],
                                 parent=runaveu)
@@ -75,7 +75,7 @@ def max_anom(u,*args,**kwargs):
     ''' Return the maximum U after applying a lon_width degree 
     running mean along the longitude.  Assumed uniform grid.
     Input:
-    u - util.nc.Variable
+    u - geodat.nc.Variable
     lon_width - scalar in degree (default = 40.)
     lat - region in the latitude (default = (-2.,2.))
     '''
@@ -94,12 +94,12 @@ def find_max_u_nino3_pairs(u_ref,nino3,lon_width=40.,lat=(-2.,2.)):
     '''
     # Positive nino3
     pos_slice = nino3.data > 0.
-    pos_regress = util.nc.regress(u_ref.getRegion(time=pos_slice),
+    pos_regress = geodat.nc.regress(u_ref.getRegion(time=pos_slice),
                                   nino3.getRegion(time=pos_slice))
     pos_lon = max_anom_lon(pos_regress)
     # Negative nino3
     neg_slice = nino3.data < 0.
-    neg_regress = util.nc.regress(u_ref.getRegion(time=neg_slice),
+    neg_regress = geodat.nc.regress(u_ref.getRegion(time=neg_slice),
                                   nino3.getRegion(time=neg_slice))
     neg_lon = max_anom_lon(neg_regress,lon_width=lon_width,lat=lat)
     u_regional = u_ref.getRegion(lon=(pos_lon-lon_width/2.,pos_lon+lon_width/2.),lat=lat).area_ave().data.squeeze()

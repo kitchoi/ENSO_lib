@@ -2,8 +2,7 @@ import numpy
 import warnings
 import itertools
 
-import util.stat as stat
-import util
+import geodat
 
 
 def findENSO_percentile(index,percentile,*args,**kwargs):
@@ -135,13 +134,13 @@ def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4,
     the time at which nino34_mid-nino34_tole < peak nino34 < nino34_mid+nino34_tole
     Then compute the climatology for these snap shots
     Input:
-    field  - util.nc.Variable
-    nino34 - util.nc.Variable
+    field  - geodat.nc.Variable
+    nino34 - geodat.nc.Variable
     nino34_mid - mid point
     nino34_tole - half bin size
     
     Output:
-    pattern - util.nc.Variable (a climatology)
+    pattern - geodat.nc.Variable (a climatology)
     '''
     if not numpy.allclose(field.getTime(),nino34.getTime()):
         raise Exception("Expect the time record of nino3.4 and the field to be the same")
@@ -152,7 +151,7 @@ def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4,
                                 < nino34_tole]
     if len(locs) == 0: 
         field_sliced_time = field.getRegion(time=slice(0,1))
-        result = util.nc.Variable(data=numpy.ma.ones(field_sliced_time.\
+        result = geodat.nc.Variable(data=numpy.ma.ones(field_sliced_time.\
                                                      data.shape),
                                   parent=field_sliced_time)
         result.data[:] = numpy.ma.masked
@@ -160,7 +159,7 @@ def find_EN_pattern(field,nino34,nino34_mid=0.8,nino34_tole=0.4,
         return result
     pattern = field[locs]
     if do_climo:
-        pattern = util.nc.climatology(pattern)
+        pattern = geodat.nc.climatology(pattern)
     pattern.setattr('event_loc',locs.squeeze())
     if verbose: print 'Nino 3.4: '+ str(nino34[locs].time_ave().squeeze().data)
     return pattern
@@ -357,7 +356,7 @@ def ENSO_transition_prob(*args,**kwargs):
 
 
 def ENSO_skewness(nino34):
-    return stat.skewness(nino34)
+    return geodat.stat.skewness(nino34)
 
 
 def Threshold2Composite(field,nino34,warm_thres,cold_thres):
