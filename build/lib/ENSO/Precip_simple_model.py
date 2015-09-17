@@ -17,14 +17,12 @@ def Precip_anom_simple(p,lon_transit=180.):
     results['P_W'] = P_x.data[P_x.getLongitude()<lon_transit].mean()
     return results
 
-
 def P_model_1(p,lon_transit=180.):
     Ps = Precip_anom_simple(p,lon_transit)
     P_EN = (Ps['P_y_max']-Ps['P_y_0'])*2.
     P_LN = Ps['P_E']
     r_P = (P_EN-P_LN)/(P_EN+P_LN)
     return r_P
-
 
 def P_model_2(p,lon_transit=180.):
     Ps = Precip_anom_simple(p,lon_transit)
