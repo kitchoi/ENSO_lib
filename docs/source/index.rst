@@ -3,10 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to ENSO Diagnostic Tool's documentation!
+ENSO Diagnostic Tool's documentation
 ================================================
 
-.. automodule:: ENSO.ITCZ
+.. automodule:: ENSO.diag
    :members:
 
 Contents:
