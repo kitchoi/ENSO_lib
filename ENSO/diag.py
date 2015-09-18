@@ -1,3 +1,25 @@
+''' This module supports the following analysis:
+
+#. Identify El Nino and La Nina events using an SST anomaly index and apply
+   threshold and persistence criteria (:py:func:`find_events`,
+   :py:func:`find_enso_percentile`, :py:func:`find_enso_threshold`)
+#. Compute the skewness of SST anomaly time series
+#. Compute the persistence of events (duration)
+#. Compute the transition probability of events
+#. Compute climatological composite of El Nino or La Nina at a certain strength
+   (:py:func:`find_en_pattern`)
+#. Compute the number of events peaking in a calendar month (for seasonal
+   phase locking analysis; :py:func:`seasonal_locking`,
+   :py:func:`seasonal_locking_from_nino34`)
+
+:py:func:`enso_skewness`, :py:func:`enso_duration`, :py:func:`enso_transition2`
+, :py:func:`find_enso_percentile` are rewritten from the Matlab code used in
+`Choi et al (2013) <http://dx.doi.org/10.1175/JCLI-D-13-00045.1>`_.
+:py:func:`find_en_pattern` is used in
+`Choi et al (2015) <http://dx.doi.org/10.1175/JCLI-D-15-0211.1>`_.
+A few of these functions require the `GeoDAT library </geodat_doc>`_.
+
+'''
 import warnings
 import itertools
 
@@ -203,8 +225,8 @@ def find_events(index, operator, threshold, per=5, window=[-3, 3]):
 def find_en_pattern(field, nino34, nino34_mid=0.8, nino34_tole=0.4,
                     do_climo=True, verbose=False):
     ''' Given a field and Nino3.4 index monthly time series, extract the time at
-    which nino34_mid-nino34_tole < peak nino34 < nino34_mid+nino34_tole
-    Then compute the climatology for these snap shots
+    which nino34_mid-nino34_tole < peak nino34 < nino34_mid+nino34_tole;
+    then compute the climatology for these snap shots
 
     Args:
         field (geodat.nc.Variable)
@@ -600,7 +622,7 @@ def seasonal_locking_from_nino34(nino34, months,
     return total_count
 
 
-def __keep_old_function_name__(f):
+def _keep_old_function_name_(f):
     ''' For preserving old function names used in previous projects '''
     def new_func(*args, **kwargs):
         return f(*args, **kwargs)
@@ -610,16 +632,16 @@ def __keep_old_function_name__(f):
 
 # Functions are renamed in order to compile with coding style convention
 # For compatibility with previous projects, old names are kept here
-findENSO_percentile = __keep_old_function_name__(find_enso_percentile)
-findENSO_threshold = __keep_old_function_name__(find_enso_threshold)
-Persistence_check = __keep_old_function_name__(persistence_check)
-findEvents = __keep_old_function_name__(find_events)
-find_EN_pattern = __keep_old_function_name__(find_en_pattern)
-ENSO_duration = __keep_old_function_name__(enso_duration)
-ENSO_transition2 = __keep_old_function_name__(enso_transition2)
-ENSO_transition = __keep_old_function_name__(enso_transition)
-ENSO_transition_prob = __keep_old_function_name__(enso_transition_prob)
-ENSO_skewness = __keep_old_function_name__(enso_skewness)
-Seasonal_Locking = __keep_old_function_name__(seasonal_locking)
-Seasonal_Locking_from_nino34 = __keep_old_function_name__(
+findENSO_percentile = _keep_old_function_name_(find_enso_percentile)
+findENSO_threshold = _keep_old_function_name_(find_enso_threshold)
+Persistence_check = _keep_old_function_name_(persistence_check)
+findEvents = _keep_old_function_name_(find_events)
+find_EN_pattern = _keep_old_function_name_(find_en_pattern)
+ENSO_duration = _keep_old_function_name_(enso_duration)
+ENSO_transition2 = _keep_old_function_name_(enso_transition2)
+ENSO_transition = _keep_old_function_name_(enso_transition)
+ENSO_transition_prob = _keep_old_function_name_(enso_transition_prob)
+ENSO_skewness = _keep_old_function_name_(enso_skewness)
+Seasonal_Locking = _keep_old_function_name_(seasonal_locking)
+Seasonal_Locking_from_nino34 = _keep_old_function_name_(
     seasonal_locking_from_nino34)
