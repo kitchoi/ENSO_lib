@@ -42,7 +42,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'ENSO Diagnostic Tool'
-copyright = u'2015, Kit Yan Choi'
+copyright = u'2015, <a href="/">Kit Yan Choi</a>'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -97,7 +97,12 @@ html_theme = 'alabaster'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {}
+html_theme_options = {
+    "logo_name": True,
+    "github_user": "kitchoi",
+    "github_repo": "ENSO_lib",
+    "github_banner": True,
+}
 
 # Add any paths that contain custom themes here, relative to this directory.
 html_theme_path = [alabaster.get_path()]
@@ -132,7 +137,9 @@ html_static_path = ['_static']
 #html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-#html_sidebars = {}
+html_sidebars = {
+    "**": ["about.html", "navigation.html",]
+}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.

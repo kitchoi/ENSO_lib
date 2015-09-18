@@ -52,6 +52,7 @@ website:
 	@echo "Build finished. The HTML pages are in ~/website/_site/ENSO_lib_doc"
 
 cleansite:
+	-rm -rf $(BUILDDIR)/*
 	-rm -rf ~/website/_site/ENSO_lib_doc/*
 
 dirhtml:
